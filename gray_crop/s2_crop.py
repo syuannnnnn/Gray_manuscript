@@ -68,9 +68,11 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
         # 使用輪廓檢測方框
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1], cv2.boundingRect(x)[0]))
+        # 對輪廓進行處理，將 y 值相差小於 10 的視為同一行
+        contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 10, cv2.boundingRect(x)[0]))
+
         # 確保目錄存在
-        output_directory = 'crop_v3'
+        output_directory = 'crop_v4'
         os.makedirs(output_directory, exist_ok=True)
 
         # 繪製藍色的邊框並裁切方框
@@ -102,23 +104,29 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
                         processed_image[labels == i] = 0
 
                 cropped_image = scale_adjustment(processed_image)
+                print(f"Contour #{i}: Unicode expected: {unicode_list[k]}, Position: ({x}, {y})")
                 cv2.imwrite(os.path.join(output_directory, f'{unicode_list[k]}.png'), cropped_image)
                 k += 1
                 # 在OpenCV中繪製藍色的邊框
                 cv2.rectangle(img_np, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-        bound_output_directory = 'rec_bound_v3'
+                if k == unicode_num:
+                    break;
+
+        bound_output_directory = 'rec_bound_v4'
         os.makedirs(bound_output_directory, exist_ok=True)
         cv2.imwrite(os.path.join(bound_output_directory, f'{page}.png'), img_np)
 
 
+
 if __name__ == "__main__":
-    image_folder = "test"
+    image_folder = "D:/font/manuscript_paper/gray/gray_crop/test"
     start_page = int(input("Enter start page: "))  # 起始頁數
     end_page = int(input("Enter end page: "))      # 結束頁數
     min_box_size = 100  # 設定閾值，只保留寬和高都大於等於這個值的方框
     min_area_threshold = 10
     padding = 8  # 內縮的像素數量
     json_path = "CP950.json"  # 請替換為你的 JSON 檔案路徑
-    unicode_num = 200
+    unicode_num = 32
+
     crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_path, unicode_num)
