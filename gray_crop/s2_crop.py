@@ -71,7 +71,7 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # 對輪廓進行處理，將 y 值相差小於 10 的視為同一行
-        contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 40, cv2.boundingRect(x)[0]))
+        contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 120, cv2.boundingRect(x)[0]))
 
         # 確保目錄存在
         output_directory = 'crop_v5'
