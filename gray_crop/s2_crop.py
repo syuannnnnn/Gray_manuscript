@@ -157,8 +157,8 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
 
 if __name__ == "__main__":
     # image_folder = "C:/Users/user/Desktop/112-2/Gray_manuscript/gray_crop/rotated_112598038"
+    # image_folder = "./rotated_112598048"
     image_folder = "./rotated_112598038"
-    # image_folder = "./rotated_112C52004"
     start_page = int(input("Enter start page: "))  # 起始頁數
     end_page = int(input("Enter end page: "))      # 結束頁數
     min_box_size = 300  # 設定閾值，只保留寬和高都大於等於這個值的方框
