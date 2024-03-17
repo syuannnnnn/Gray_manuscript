@@ -33,6 +33,7 @@ def scale_adjustment(word_img):
     cX, cY = topLeftX + word_w // 2, topLeftY + word_h // 2  # 幾何中心
 
     # 數值越大文字越小，數值越小文字越大
+    # crop_length = 250
     crop_length = 310
     h, w = word_img_copy.shape
     left_x = max(0, cX - int(crop_length/2))
