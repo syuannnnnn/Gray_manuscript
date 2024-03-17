@@ -92,7 +92,11 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # 對輪廓進行處理，將 y 值相差小於 10 的視為同一行
-        # contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 120, cv2.boundingRect(x)[0]))        
+        # contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 120, cv2.boundingRect(x)[0]))
+        
+        ############################################### DEBUG-LOG ##############################################
+        #cv2.boundingRect(x)[1] // 120 時，會成現約略相同高度的一排字，因python整除無條件捨去，所導致分成不同排的狀況#
+        ############################################### DEBUG-LOG ##############################################
         # 對輪廓進行處理，sort_contours_key() 將 y 值相差小於 15 的視為同一行
         contours = sorted(contours, key=cmp_to_key(sort_contours_key))
 
@@ -129,7 +133,11 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
                         processed_image[labels == conum] = 0
 
                 cropped_image = scale_adjustment(processed_image)
-                print(f"Contour #{i}: Unicode expected: {unicode_list[k]}, Position: ({x}, {y}) y//120: {y//120}")
+
+                ################################################## DEBUG-LOG ##################################################
+                # 顯示當 cv2.boundingRect(x)[1] // 120 時，會成現約略相同高度的一排字，因python整除無條件捨去，所導致分成不同排的狀況#
+                ################################################## DEBUG-LOG ##################################################
+                # print(f"Contour #{i}: Unicode expected: {unicode_list[k]}, Position: ({x}, {y}) y//120: {y//120}")
                 # cv2.imwrite(os.path.join(output_directory, f'{unicode_list[k]}_x-{x}_y-{y}.png'), cropped_image)
                 cv2.imwrite(os.path.join(output_directory, f'{unicode_list[k]}.png'), cropped_image)
                 k += 1
