@@ -16,7 +16,8 @@ def parse_args():
     
     parser.add_argument('--id',
                         help='To rotated page from student id folder',
-                        default="112598048",
+                        # default="112598048",
+                        default="112598038",
                         type=str)
 
     args = parser.parse_args()

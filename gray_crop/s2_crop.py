@@ -33,7 +33,8 @@ def scale_adjustment(word_img):
     cX, cY = topLeftX + word_w // 2, topLeftY + word_h // 2  # 幾何中心
 
     # 數值越大文字越小，數值越小文字越大
-    crop_length = 250
+    # crop_length = 250
+    crop_length = 310
     h, w = word_img_copy.shape
     left_x = max(0, cX - int(crop_length/2))
     right_x = min(w, cX + int(crop_length/2))
@@ -43,6 +44,27 @@ def scale_adjustment(word_img):
     final_word_img = word_img_copy[top_y:bot_y, left_x:right_x]
     return cv2.resize(final_word_img, (300, 300), interpolation=cv2.INTER_AREA)
 
+
+from functools import cmp_to_key
+# count = 0
+def sort_contours_key(x,y):
+    # global count
+    Hpx = cv2.boundingRect(x)[1]
+    Hpy = cv2.boundingRect(y)[1]
+    Wpx = cv2.boundingRect(x)[0]
+    Wpy = cv2.boundingRect(y)[0]
+
+    hpy = Hpy//120
+    hpx = Hpx//120
+    (th,tw) = (Hpx,Hpy) if Hpx > Hpy else (Hpy,Hpx)
+    if th - tw <= 15:
+        if Wpx == Wpy:
+            # print(f'same image match! x:{Hpx},{Wpx}  y:{Hpy},{Wpy}')
+            # count+=1
+            return 0
+        else:
+            return 1 if Wpx > Wpy else -1
+    return 1 if hpx > hpy else -1
 
 def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_path, unicode_num):
     # 讀取圖片
@@ -71,7 +93,13 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
         contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # 對輪廓進行處理，將 y 值相差小於 10 的視為同一行
-        contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 120, cv2.boundingRect(x)[0]))
+        # contours = sorted(contours, key=lambda x: (cv2.boundingRect(x)[1] // 120, cv2.boundingRect(x)[0]))
+        
+        ############################################### DEBUG-LOG ##############################################
+        #cv2.boundingRect(x)[1] // 120 時，會成現約略相同高度的一排字，因python整除無條件捨去，所導致分成不同排的狀況#
+        ############################################### DEBUG-LOG ##############################################
+        # 對輪廓進行處理，sort_contours_key() 將 y 值相差小於 15 的視為同一行
+        contours = sorted(contours, key=cmp_to_key(sort_contours_key))
 
         # 確保目錄存在
         output_directory = 'crop_v5'
@@ -100,17 +128,24 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
                 kernel = np.ones((2, 2), np.uint8)
                 processed_image = cv2.morphologyEx(median_filtered, cv2.MORPH_OPEN, kernel)
                 connectivity, labels, stats, centroids = cv2.connectedComponentsWithStats(processed_image, connectivity=8)
-                for i in range(1, connectivity):
-                    area = stats[i, cv2.CC_STAT_AREA]
+                for conum in range(1, connectivity):
+                    area = stats[conum, cv2.CC_STAT_AREA]
                     if area < min_area_threshold:
-                        processed_image[labels == i] = 0
+                        processed_image[labels == conum] = 0
 
                 cropped_image = scale_adjustment(processed_image)
-                #print(f"Contour #{i}: Unicode expected: {unicode_list[k]}, Position: ({x}, {y})")
+
+                ################################################## DEBUG-LOG ##################################################
+                # 顯示當 cv2.boundingRect(x)[1] // 120 時，會成現約略相同高度的一排字，因python整除無條件捨去，所導致分成不同排的狀況#
+                ################################################## DEBUG-LOG ##################################################
+                # print(f"Contour #{i}: Unicode expected: {unicode_list[k]}, Position: ({x}, {y}) y//120: {y//120}")
+                # cv2.imwrite(os.path.join(output_directory, f'{unicode_list[k]}_x-{x}_y-{y}.png'), cropped_image)
                 cv2.imwrite(os.path.join(output_directory, f'{unicode_list[k]}.png'), cropped_image)
                 k += 1
                 # 在OpenCV中繪製藍色的邊框
+                
                 cv2.rectangle(img_np, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                # cv2.circle(img_np, (x, y), 15, (0, 0, 255), -1)
 
                 if k == unicode_num:
                     break;
@@ -122,7 +157,9 @@ def crop_boxes(image_folder, start_page, end_page, min_box_size, padding, json_p
 
 
 if __name__ == "__main__":
-    image_folder = "C:/Users/user/Desktop/112-2/Gray_manuscript/gray_crop/rotated_112598048"
+    # image_folder = "C:/Users/user/Desktop/112-2/Gray_manuscript/gray_crop/rotated_112598038"
+    # image_folder = "./rotated_112598048"
+    image_folder = "./rotated_112598038"
     start_page = int(input("Enter start page: "))  # 起始頁數
     end_page = int(input("Enter end page: "))      # 結束頁數
     min_box_size = 300  # 設定閾值，只保留寬和高都大於等於這個值的方框
